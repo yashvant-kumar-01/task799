@@ -37,9 +37,20 @@ const app = express();
 // ─── Security Middleware ────────────────────────────────────────────────────
 app.use(helmet()); // Set security HTTP headers
 
-// CORS Configuration
+// CORS Configuration - supports multiple origins via comma-separated CLIENT_URL
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim());
+
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS: Origin ${origin} not allowed`));
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 };
